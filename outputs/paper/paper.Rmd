@@ -1,12 +1,11 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Indirect Interventions for Stabilizing Housing Markets"
+subtitle: "Reproduction of Unemployment Insurance as a Housing Market Stabilizer (Hsu, Matsa, and Melzer 2018)"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: LINK."
+  - Roy Chan
+thanks: "Code and data are available at: https://github.com/chan-roy/HousingMarkets"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "Preventing home foreclosures due to their associated costs is a key concern for policymakers during periods of economic instability. (Hsu, Matsa, and Melzer 2018) investigate the impact of unemployment insurance (UI) to stabilize the housing market, evaluating that UI expansions during the Great Recession aided in preventing foreclosures and stabilized home values. This paper replicates the analysis of their study and investigates alternative factors that impacted foreclosure rates and home valuation. \\textbf{Keywords:} housing market stability, personal finance, great recession, unemployment insurance, foreclosures, economic policy, united states"
 output:
   bookdown::pdf_document2
 toc: FALSE
@@ -17,77 +16,22 @@ bibliography: references.bib
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(palmerpenguins)
 ```
 
 # Introduction
 
-You can and should cross-reference sections and sub-sections. For instance, Section \@ref(data). R Markdown automatically makes the sections lower case and adds a dash to spaces to generate labels, for instance, Section \@ref(first-discussion-point). 
+During periods of severe housing market instability such as the time of the Great Recession, policymakers are concerned with the potential of bearing the associated costs of defaulted mortgages and foreclosures. However, it is not always clear what type of intervention is most appropriate and/or feasible to relieve this issue provided the likelihood of high strain on the economy during such times. In the paper \textit{Unemployment Insurance as a Housing Market Stabilizer} [@citeHsu], it is discussed that there exists a debate on the reasoning for mortgage defaults rendering it difficult to effectively design an intervening policy.
 
-
+In this paper, we will be replicating the analysis originally presented by [@citeHsu] as well as expanding on additional indirect factors mentioned but not thoroughly explored in the original paper.
 
 # Data
-
-Our data is of penguins (Figure \@ref(fig:bills)).
-
-```{r bills, fig.cap="Bills of penguins", echo = FALSE}
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = FALSE) +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
-```
-
-Talk more about it.
-
-Also bills and their average (Figure \@ref(fig:billssssss)). (Notice how you can change the height and width so they don't take the whole page?)
-
-```{r billssssss, fig.cap="More bills of penguins", echo = FALSE, fig.width=8, fig.height=4}
-
-# This needs to be about the random data tha tI sasmpled?
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = FALSE) +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
-```
-
-Talk way more about it. 
-
-
+[@citeR]
 
 # Model
-
-\begin{equation}
-Pr(\theta | y) = \frac{Pr(y | \theta) Pr(\theta)}{Pr(y)}  (\#eq:bayes)
-\end{equation}
-
-Equation \@ref(eq:bayes) seems useful, eh?
-
-Here's a dumb example of how to use some references: In paper we run our analysis in `R` [@citeR]. We also use the `tidyverse` which was written by @thereferencecanbewhatever If we were interested in baseball data then @citeLahman could be useful. 
-
-We can use maths by including latex between dollar signs, for instance $\theta$.
-
 
 # Results
 
 # Discussion
-
-## First discussion point
-
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
-
-## Second discussion point
-
-## Third discussion point
-
-## Weaknesses and next steps
-
-Weaknesses and next steps should also be included.
 
 \newpage
 
@@ -95,12 +39,9 @@ Weaknesses and next steps should also be included.
 
 # Appendix {-}
 
-
-# Additional details
-
+# Enhancement
 
 \newpage
-
 
 # References
 

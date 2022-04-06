@@ -1,5 +1,3 @@
-# P5
-
 This repository is a replication of the paper Unemployment Insurance as a Housing Market Stabilizer (DOI: 10.1257/aer.20140989).
 
 It is organised as follows:
