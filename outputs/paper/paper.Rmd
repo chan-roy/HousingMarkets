@@ -13,9 +13,11 @@ bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
+library(kableExtra)
+library(here)
 ```
 
 # Introduction
@@ -25,7 +27,64 @@ During periods of severe housing market instability such as the time of the Grea
 In this paper, we will be replicating the analysis originally presented by [@citeHsu] as well as expanding on additional indirect factors mentioned but not thoroughly explored in the original paper.
 
 # Data
-[@citeR]
+We would like to investigate the relationship between changes in unemployment benefit generosity and the number of home foreclosures within the United States. The original analysis performed by [@citeHsu] is done in Stata. For the purposes of aiding reproducibility, we will be reproducing their scripts using `R` [@citeR], `dplyr` [@citeDplyr] and converting data filetypes with `haven` [@citeHaven]. Tables are generated using `kableExtra` [@citeKable].
+
+As a reproduction, we will be utilising the same data as the original paper, as made available and obtained from openICPSR (CITATION). There are five separate datasets used within the paper:
+
+- Attributes relating to unemployment benefits for each state for the years of 1991-2010, obtained from the Bureau of Labor Statistics, Bureau of Economic Analysis, Department of Labor, and Hirsch and Macpherson (2003).
+
+- Factors of mortgage borrowers relating to potential of delinquency from the Survey of Income and Program Participation (SIPP) years 1991, 1992, 1993, 1996, 2000, 2004, 2008 and supplemented by the corresponding unemployment insurance program characteristics obtained from the Department of Labor.
+
+- Household data of mortgage borrowers from the NLSY79 survey years 2010 and 2012 for foreclosure related variables.
+
+- Characteristics of mortgages and housing relating to foreclosure risk by state from NLSY79 2010 and 2012.
+
+- Home price growth, unemployment rates, and unemployment insurance data of each state from 2008 to 2013, obtained from Zillow, Bureau of Labor Statistics, and Department of Labor respectively.
+
+```{r summary_stats}
+# read in csvs for each dataset
+econ_analysis <- read_csv(here::here("inputs/data/econ_analysis.csv"))
+sipp_analysis <- read_csv(here::here("inputs/data/sipp_analysis.csv"))
+nlsy_analysis <- read_csv(here::here("inputs/data/nlsy_analysis.csv"))
+nlsy_state_variables <- read_csv(here::here("inputs/data/nlsy_state_variables.csv"))
+hpi_analysis <- read_csv(here::here("inputs/data/hpi_analysis.csv"))
+
+# replicate table 1 of original paper, get mean median and sd for all variables
+
+# Panel A, state characteristics
+panel_a <- econ_analysis %>%
+  select(max_ben, wba_max_thousands, duration_max, max_ben_real, ln_max_ben, 
+         max_ben_wages, ui_rr, neg_ui_rr_pct, max_ben_eb_euc, eb_euc_weeks,
+         unemp_rate, ln_realgdp_percap, wages_state, cov) %>%
+  pivot_longer(everything(), names_to = 'variable', values_to = 'value') %>%
+  group_by(variable) %>%
+  summarise(mean = mean(value, na.rm = TRUE), median = median(value, na.rm = TRUE), sd = sd(value, na.rm = TRUE))
+
+# Panel B, household characteristics, delinquency analysis
+panel_b <- sipp_analysis %>%
+  select(delinq_mort, evict, ltv_win, neg_equity, mortgage_ui, max_ben_indiv,
+         layoff, earnings_total, assets_liquid, thhtnw, educ_less_hs, educ_hs,
+         educ_somecol, educ_col, educ_grad) %>%
+  pivot_longer(everything(), names_to = 'variable', values_to = 'value') %>%
+  group_by(variable) %>%
+  summarise(mean = mean(value, na.rm = TRUE), median = median(value, na.rm = TRUE), sd = sd(value, na.rm = TRUE))
+
+# Panel C, household characteristics, foreclosure analysis
+panel_c <- nlsy_analysis %>%
+  select(foreclosure, lost_home, layoff, earnings_lag, net_worth_lag, 
+         ltv_win_lag, ltv_win2nd_lag, neg_equity_lag, neg_equity2nd_lag) %>%
+  pivot_longer(everything(), names_to = 'variable', values_to = 'value') %>%
+  group_by(variable) %>%
+  summarise(mean = mean(value, na.rm = TRUE), median = median(value, na.rm = TRUE), sd = sd(value, na.rm = TRUE))
+
+# create table using kableExtra
+all_panels <- bind_rows(panel_a, panel_b, panel_c)
+
+all_panels %>% 
+  kbl(booktabs = T, col.names = c('Variable', 'Mean', 'Median', 'SD'), digits = 2) %>%
+  kable_styling(position = "center")
+```
+
 
 # Model
 
@@ -40,6 +99,7 @@ In this paper, we will be replicating the analysis originally presented by [@cit
 # Appendix {-}
 
 # Enhancement
+## Datasheet for Dataset
 
 \newpage
 
