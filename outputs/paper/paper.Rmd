@@ -5,7 +5,7 @@ author:
   - Roy Chan
 thanks: "Code and data are available at: https://github.com/chan-roy/HousingMarkets"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "Preventing home foreclosures due to their associated costs is a key concern for policymakers during periods of economic instability. (Hsu, Matsa, and Melzer 2018) investigate the impact of unemployment insurance (UI) to stabilize the housing market, evaluating that UI expansions during the Great Recession aided in preventing foreclosures and stabilized home values. This paper replicates the analysis of their study and investigates alternative factors that impacted foreclosure rates and home valuation. \\textbf{Keywords:} housing market stability, personal finance, great recession, unemployment insurance, foreclosures, economic policy, united states"
+abstract: "Preventing home foreclosures due to their associated costs is a key concern for policymakers during periods of economic instability. (Hsu, Matsa, and Melzer 2018) investigate the impact of unemployment insurance (UI) to stabilize the housing market in the United States, evaluating that UI expansions during the Great Recession aided in preventing foreclosures and stabilized home values. This paper replicates the analysis of their study and investigates alternative factors that impacted foreclosure rates and home valuation. \\textbf{Keywords:} housing market stability, personal finance, great recession, unemployment insurance, foreclosures, economic policy, united states"
 output:
   bookdown::pdf_document2
 toc: FALSE
@@ -22,12 +22,19 @@ library(here)
 
 # Introduction
 
-During periods of severe housing market instability such as the time of the Great Recession, policymakers are concerned with the potential of bearing the associated costs of defaulted mortgages and foreclosures. However, it is not always clear what type of intervention is most appropriate and/or feasible to relieve this issue provided the likelihood of high strain on the economy during such times. In the paper \textit{Unemployment Insurance as a Housing Market Stabilizer} [@citeHsu], it is discussed that there exists a debate on the reasoning for mortgage defaults rendering it difficult to effectively design an intervening policy.
-
-In this paper, we will be replicating the analysis originally presented by [@citeHsu] as well as expanding on additional indirect factors mentioned but not thoroughly explored in the original paper.
+During periods of severe economic and housing market instability such as the time of the Great Recession, policymakers are concerned with the potential of a significant increase in the number of mortgage defaults, wherein a mortgage agreement is broken most often caused by the mortgagor (borrower in a mortgage agreement) failing to make payments. Mortgage defaults directly lead to the process of foreclosures which create additional cost for lenders who attempt to recoup the cost of the property. However, it is not always clear what type of intervention is most appropriate and/or feasible to relieve this issue provided the likelihood of high strain on the economy during such times. In the paper \textit{Unemployment Insurance as a Housing Market Stabilizer} [@citeHsu], it is discussed that there exists a debate on the reasoning for mortgage defaults rendering it difficult to effectively design an intervening policy. Some mortgagors may choose to purposefully default on their mortgages, in the cases where the value of the debt significantly outweights the price of the property. Their paper focuses on the expansions of unemployment insurance and benefits during the Great Recession, and hypothesises that it resulted in a significant reduction of the number of foreclosures during that time, as well as dampening changes in housing prices as a result of labor market instability. In this paper, we will be replicating the analysis originally presented by [@citeHsu] as well as expanding on their analysis of housing price changes.
 
 # Data
-We would like to investigate the relationship between changes in unemployment benefit generosity and the number of home foreclosures within the United States. The original analysis performed by [@citeHsu] is done in Stata. For the purposes of aiding reproducibility, we will be reproducing their scripts using `R` [@citeR], `dplyr` [@citeDplyr] and converting data filetypes with `haven` [@citeHaven]. Tables are generated using `kableExtra` [@citeKable].
+```{r loadData}
+# read in csvs for each dataset
+econ_analysis <- read_csv(here::here("inputs/data/econ_analysis.csv"))
+sipp_analysis <- read_csv(here::here("inputs/data/sipp_analysis.csv"))
+nlsy_analysis <- read_csv(here::here("inputs/data/nlsy_analysis.csv"))
+nlsy_state_variables <- read_csv(here::here("inputs/data/nlsy_state_variables.csv"))
+hpi_analysis <- read_csv(here::here("inputs/data/hpi_analysis.csv"))
+all_panels <- read_csv(here::here("inputs/data/all_panels.csv"))
+```
+We would like to investigate the relationship between changes in unemployment benefit generosity and the number of home foreclosures within the United States. The original analysis performed by [@citeHsu] is done in Stata. For the purposes of aiding reproducibility, we will be reproducing their scripts using `R` [@citeR], `dplyr` [@citeDplyr] and converting data filetypes with `haven` [@citeHaven]. Data is retrieved for presenting within this report using `here` [@citeHere]. Plots are created using `ggplot2` [@citeGgplot]. Tables are generated using `kableExtra` [@citeKable].
 
 As a reproduction, we will be utilising the same data as the original paper, as made available and obtained from openICPSR (CITATION). There are five separate datasets used within the paper:
 
@@ -41,56 +48,99 @@ As a reproduction, we will be utilising the same data as the original paper, as 
 
 - Home price growth, unemployment rates, and unemployment insurance data of each state from 2008 to 2013, obtained from Zillow, Bureau of Labor Statistics, and Department of Labor respectively.
 
-```{r summary_stats}
-# read in csvs for each dataset
-econ_analysis <- read_csv(here::here("inputs/data/econ_analysis.csv"))
-sipp_analysis <- read_csv(here::here("inputs/data/sipp_analysis.csv"))
-nlsy_analysis <- read_csv(here::here("inputs/data/nlsy_analysis.csv"))
-nlsy_state_variables <- read_csv(here::here("inputs/data/nlsy_state_variables.csv"))
-hpi_analysis <- read_csv(here::here("inputs/data/hpi_analysis.csv"))
+The following table, Table \@ref(tab:summaryStats) is a reproduction of Table 1 from the original paper, showing summary statistics of the variables of interest for our analysis.
 
-# replicate table 1 of original paper, get mean median and sd for all variables
-
-# Panel A, state characteristics
-panel_a <- econ_analysis %>%
-  select(max_ben, wba_max_thousands, duration_max, max_ben_real, ln_max_ben, 
-         max_ben_wages, ui_rr, neg_ui_rr_pct, max_ben_eb_euc, eb_euc_weeks,
-         unemp_rate, ln_realgdp_percap, wages_state, cov) %>%
-  pivot_longer(everything(), names_to = 'variable', values_to = 'value') %>%
-  group_by(variable) %>%
-  summarise(mean = mean(value, na.rm = TRUE), median = median(value, na.rm = TRUE), sd = sd(value, na.rm = TRUE))
-
-# Panel B, household characteristics, delinquency analysis
-panel_b <- sipp_analysis %>%
-  select(delinq_mort, evict, ltv_win, neg_equity, mortgage_ui, max_ben_indiv,
-         layoff, earnings_total, assets_liquid, thhtnw, educ_less_hs, educ_hs,
-         educ_somecol, educ_col, educ_grad) %>%
-  pivot_longer(everything(), names_to = 'variable', values_to = 'value') %>%
-  group_by(variable) %>%
-  summarise(mean = mean(value, na.rm = TRUE), median = median(value, na.rm = TRUE), sd = sd(value, na.rm = TRUE))
-
-# Panel C, household characteristics, foreclosure analysis
-panel_c <- nlsy_analysis %>%
-  select(foreclosure, lost_home, layoff, earnings_lag, net_worth_lag, 
-         ltv_win_lag, ltv_win2nd_lag, neg_equity_lag, neg_equity2nd_lag) %>%
-  pivot_longer(everything(), names_to = 'variable', values_to = 'value') %>%
-  group_by(variable) %>%
-  summarise(mean = mean(value, na.rm = TRUE), median = median(value, na.rm = TRUE), sd = sd(value, na.rm = TRUE))
-
-# create table using kableExtra
-all_panels <- bind_rows(panel_a, panel_b, panel_c)
-
+```{r summaryStats}
+# replicate table 1 of original paper
 all_panels %>% 
-  kbl(booktabs = T, col.names = c('Variable', 'Mean', 'Median', 'SD'), digits = 2) %>%
-  kable_styling(position = "center")
+  kbl(booktabs = T, caption="Summary Statistics", col.names = c('', 'Mean', 'Median', 'SD'), digits = 2) %>%
+  kable_styling(position = "center", latex_options = "HOLD_position") %>%
+  pack_rows("State characteristics (1991-2010, N = 1020)", 1, 14) %>%
+    pack_rows("Unemployment insurance", 1, 10) %>%
+    pack_rows("Economic variables", 11, 14) %>%
+  pack_rows("SIPP household characteristics and delinquency data (1991-2010, N = 52,713)", 15, 31) %>%
+    pack_rows("Mortgage and housing", 15, 20) %>%
+    pack_rows("Employment, income, and assets", 21, 25) %>%
+    pack_rows("Education (highest within household)", 26, 31) %>%
+  pack_rows("NLSY household characteristics and foreclosure analysis (2010 and 2012, N = 7689)", 32, 39) %>%
+    pack_rows("Mortgage and housing", 32, 36) %>%
+    pack_rows("Employment, income, and assets", 37, 39)
 ```
 
 
 # Model
+As we are primarily interested in how changes in unemployment benefits affect the number of mortgage defaults, we would like to use a model that encompasses the relationship between these two factors. We will be using and replicating the results of model 2 in the original paper, which models the relationship between mortgage delinquency and unemployment benefits. There exists a significant amount of variability between each state's unemployment benefits [@citeHsu] and we want to account for economic differences between households, so control variables are included. The model uses the data from SIPP.
+
+\begin{center}
+$Delinquent_{is} = \alpha + \beta MaxEBEUC_s \times Layoff_i + \delta Layoff_i + \zeta X_i + \lambda_s + \epsilon_{is}$
+\end{center}
+
+$MaxEBEUC$ is the product of the maximum weekly unemployment benefits, unemployment insurance and emergency unemployment compensation, and the maximum number of weeks for which the benefits can be paid, $Layoff_i$ is the indicator of whether a layoff occurred within the household in prior 12 months, and $\zeta X_i, \lambda_s$ represent the control household and state variables respectively.
 
 # Results
+Firstly, we will replicate Figure 3 of the original paper, plotting mortgage delinquency against maximum unemployment benefits, to quickly visualise and validate that there is a relationship between them.
+
+```{r plotModel, fig.cap="Correlation between change in mortgage delinquency and max benefit by state, for SIPP years 1991 and 2010", fig.height = 5, fig.width = 5}
+# calculate change in max benefit and change in mortgage delinquency percentage over all years
+data_2010 <- sipp_analysis %>%
+  filter(layoff == 1 & year == 2010) %>%
+  select(year, stcode, delinq_mort, max_ben) %>%
+  na.omit() %>%
+  group_by(stcode, year) %>%
+  mutate(delinq_mort = sum(delinq_mort) / 100) %>%
+  distinct()
+
+data_1992 <- sipp_analysis %>%
+  filter(layoff == 1 & year == 1992) %>%
+  select(year, stcode, delinq_mort, max_ben) %>%
+  na.omit() %>%
+  group_by(stcode, year) %>%
+  mutate(delinq_mort = sum(delinq_mort) / 100) %>%
+  distinct()
+  
+plot_data <- merge(data_2010, data_1992, by = "stcode") %>%
+  summarise(stcode, change_ben = max_ben.x - max_ben.y, change_delinq = delinq_mort.x - delinq_mort.y)
+
+plot_data %>% 
+  ggplot(aes(x = change_ben, y = change_delinq, label = stcode)) + 
+  geom_text() + 
+  geom_smooth(method = "lm", se = FALSE) +
+  theme(plot.title = element_text(face = 'bold')) +
+  labs(x = "Change in Max Unemployment Benefit (%)", y = "Change in Mortgage Delinquency Rate (%)", title = "Negative correlation between mortgage delinquency \nand max unemployment benefits", caption="* Numbers correspond to U.S. FIPS codes for states")
+```
+
+As we can see from the plot, there exists a negative correlation between unemployment benefits and mortgage delinquency, as increases in benefits reflect a decrease in delinquency. Next, we perform our linear regression using the aforementioned model, for which we show the results in Table \@ref(tab:modelTable).
+
+```{r model, include=FALSE}
+# models adapted from sipp_analysis.do 
+model_1 <- lm(delinq_mort ~ max_ben_eb_euc_demeanX * layoff + unemp_rate + ln_realgdp_percap + wages_state + ui_rr + neg_ui_rr + union_cov, data = sipp_analysis)
+summary(model_1)
+model_2 <- lm(delinq_mort ~ max_ben_eb_euc_demeanX * layoff + tur_3mo_demeanX * layoff + unemp_rate + ln_realgdp_percap + wages_state + ui_rr + neg_ui_rr + union_cov, data = sipp_analysis)
+summary(model_2)
+model_3 <- lm(delinq_mort ~ eb_euc_weeks_demeanX * layoff + tur_3mo_demeanX * layoff + unemp_rate + ln_realgdp_percap + wages_state + ui_rr + neg_ui_rr + union_cov, data = sipp_analysis)
+summary(model_3)
+```
+
+```{r modelTable}
+model_stats <- data.frame(labels = c("Max EB EUC * Layoff", "Max EB EUC Duration * Layoff", "Layoff", "Observations", "$R^2$"), 
+                          "1" = c("-0.246 (0.07)", "", "10.2", "12,606", "0.03"),
+                          "2" = c("-0.30 (0.07)", "", "10.1", "12,606", "0.03"),
+                          "3" = c("", "-0.33 (0.08)", "9.95", "12,606", "0.03"))
+
+model_stats %>% 
+  kbl(booktabs = T, col.names = c(" ", "1", "2", "3"), caption="Summary of Linear Regression Results", escape = FALSE) %>% 
+  kable_styling(position = "center", latex_options = "HOLD_position") %>%
+  add_header_above(c(" " = 1, "Linear model variation" = 3)) %>%
+  footnote(alphabet = "Standard error in brackets")
+```
 
 # Discussion
+
+## Weaknesses
+- unfamiliarity with Stata, code conversion may not have fully replicated original processes
+- variable of house price growth was not made available, which required us to exclude it from our models 
+- weights were not applied for SIPP and NLSY analysis due to complications with applying different weights by year, summary statistics figures and model estimates differ
+- however, we still were able to achieve a consistent result with the original paper despite weights not being applied
 
 \newpage
 
