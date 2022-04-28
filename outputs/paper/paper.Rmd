@@ -5,7 +5,7 @@ author:
   - Roy Chan
 thanks: "Code and data are available at: https://github.com/chan-roy/HousingMarkets"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "Preventing home foreclosures due to their associated costs is a key concern for policymakers during periods of economic instability. (Hsu, Matsa, and Melzer 2018) investigate the impact of unemployment insurance (UI) to stabilize the housing market in the United States, evaluating that UI expansions during the Great Recession aided in preventing foreclosures and stabilized home values. This paper replicates the analysis of their study and investigates alternative factors that impacted foreclosure rates and home valuation. \\textbf{Keywords:} housing market stability, personal finance, great recession, unemployment insurance, foreclosures, economic policy, united states"
+abstract: "Preventing home foreclosures due to their associated costs is a key concern for policymakers during periods of economic instability. (Hsu, Matsa, and Melzer 2018) investigate the impact of unemployment insurance (UI) to stabilize the housing market in the United States, evaluating that UI expansions during the Great Recession aided in preventing foreclosures and stabilized home values. This paper replicates the analysis of their study and investigates alternative factors that impacted foreclosure rates. \\textbf{Keywords:} housing market stability, personal finance, great recession, unemployment insurance, foreclosures, economic policy, united states"
 output:
   bookdown::pdf_document2
 toc: FALSE
@@ -110,7 +110,7 @@ plot_data %>%
   labs(x = "Change in Max Unemployment Benefit (%)", y = "Change in Mortgage Delinquency Rate (%)", title = "Negative correlation between mortgage delinquency \nand max unemployment benefits", caption="* Numbers correspond to U.S. FIPS codes for states")
 ```
 
-As we can discern from the plot, there exists a negative correlation between unemployment benefits and mortgage delinquency, as increases in benefits reflect a decrease in delinquency. At this point, we perform our linear regression using the aforementioned model. There are three variations of the model discussed within the original paper, the first being as originally shown, the second as a cubic regression for the variable of $MaxEBEUC$, and the third focusing on weeks of benefit duration instead of compensation directly. We show the results of these three regression models in Table \@ref(tab:modelTable).
+As we can discern from the plot, there exists a negative correlation between unemployment benefits and mortgage delinquency, as increases in benefits reflect a decrease in delinquency. At this point, we perform our linear regression using the aforementioned model. There are three variations of the model discussed within the original paper, the first being as originally shown, the second as a cubic regression for the variable of $MaxEBEUC$, and the third focusing on weeks of benefit duration instead of compensation directly. As an expansion to investigate additional factors not originally addressed, we create a fourth model using net worth as an indicator. We show the results of these three regression models in Table \@ref(tab:modelTable).
 
 ```{r model, include=FALSE}
 # models adapted from sipp_analysis.do 
@@ -120,33 +120,32 @@ model_2 <- lm(delinq_mort ~ max_ben_eb_euc_demeanX * layoff + tur_3mo_demeanX * 
 summary(model_2)
 model_3 <- lm(delinq_mort ~ eb_euc_weeks_demeanX * layoff + tur_3mo_demeanX * layoff + unemp_rate + ln_realgdp_percap + wages_state + ui_rr + neg_ui_rr + union_cov, data = sipp_analysis)
 summary(model_3)
+model_4 <- lm(delinq_mort ~ thhtnw * layoff + unemp_rate + ln_realgdp_percap + wages_state + ui_rr + neg_ui_rr + union_cov, data = sipp_analysis)
+summary(model_4)
 ```
 
 ```{r modelTable}
-model_stats <- data.frame(labels = c("Max EB EUC * Layoff", "Max EB EUC Duration * Layoff", "Layoff", "Observations", "$R^2$"), 
-                          "1" = c("-0.246 (0.07)", "", "10.2", "12,606", "0.03"),
-                          "2" = c("-0.30 (0.07)", "", "10.1", "12,606", "0.03"),
-                          "3" = c("", "-0.33 (0.08)", "9.95", "12,606", "0.03"))
+model_stats <- data.frame(labels = c("Max EB EUC * Layoff", "Max EB EUC Duration * Layoff","Net worth * Layoff", "Layoff", "Observations", "$R^2$"), 
+                          "1" = c("-0.246 (0.07)","", "", "10.2", "12,606", "0.03"),
+                          "2" = c("-0.30 (0.07)","", "", "10.1", "12,606", "0.03"),
+                          "3" = c("", "-0.33 (0.08)", "", "9.95", "12,606", "0.03"),
+                          "4" = c("", "", "-14.7 (0.849)", "9.65", "12,606", "0.02"))
 
 model_stats %>% 
-  kbl(booktabs = T, col.names = c(" ", "1", "2", "3"), caption="Summary of Linear Regression Results", escape = FALSE) %>% 
+  kbl(booktabs = T, col.names = c(" ", "1", "2", "3", "4"), caption="Summary of Linear Regression Results", escape = FALSE) %>% 
   kable_styling(position = "center", latex_options = "HOLD_position") %>%
-  add_header_above(c(" " = 1, "Mortgage delinquency" = 3)) %>%
+  add_header_above(c(" " = 1, "Mortgage delinquency" = 4)) %>%
   footnote(general = "Standard error of estimates stated in brackets.")
 ```
 
-Relative to the results obtained in the original paper, we are able to replicate similar results using the data and adapting the regression models from Stata to `R`. For all three variations, our estimated values are statistically significant at the $p(<0.05)$ level. Thus, we state that for every $1000 increase in unemployment benefits, there is a corresponding -0.24% decrease in probability of mortgage delinquency.
+Relative to the results obtained in the original paper, we are able to replicate similar results using the data and adapting the regression models from Stata to `R`. For all four variations, our estimated values are statistically significant at the $p(<0.05)$ level. Thus, we confer the result that for every $1000 increase in unemployment benefits, there is a corresponding -0.24% decrease in probability of mortgage delinquency. For model 4, we see a strong negative correlation between net worth and mortgage delinquency, with a -14.7% decrease in probability of delinquency per \$1 million in net worth.
 
 # Discussion
-## Effectiveness of unemployment insurance to prevent mortgage delinquency
-- magnitude of the percentage probability change is small
-- discussion of strategically defaulting (CITATION)
-- limited benefit in cases where mortgage costs outweigh debt
-- issue with indirect intervention is in itself, indiviudals may not be concerned with mortgage payments in times of economic hardship
+## Limited effectiveness of unemployment insurance to prevent mortgage delinquency
+Our analysis was able to determine a statistically significant decrease in mortgage delinquency, however the magnitude of the percentage probability change is small. We theorise that, as previously introduced, there exists a trend of strategic defaulting. During the period of the Great Recession, it is estimated that up to 17% of mortgages were strategically defaulted [@citeExperian], owing to falling property prices outweighing the debt of a defaulted mortgage. This is compounded by the use of indirect intervention- individuals may not be concerned with prioritising mortgage payments in times of economic hardship.
 
-
-## Weaknesses
-While this paper was successful in replicating aspects of the original paper, there are several weaknesses that limit its accuracy. As the original analysis was written and performed in Stata, I still have limited familiarity with the software, thus the code conversion to R may not have fully replicated original processes, with not all methods used in the original being available. With regards to the limitations of the data, the variable of house price growth was not made available, which required us to exclude it from our models. Weights were not applied for SIPP and NLSY analysis due to complications with applying different weights per year, resulting in summary statistics figures and model estimates differing slightly for both total number of observations and calculated variables.
+## Weaknesses and next steps
+While this paper was successful in replicating aspects of the original paper, there are several weaknesses that limit its accuracy. As the original analysis was written and performed in Stata, I still have limited familiarity with the software, thus the code conversion to R may not have fully replicated original processes, with not all methods used in the original being available. With regards to the limitations of the data, the variable of house price growth was not made available, which required us to exclude it from our models. Weights were not applied for SIPP and NLSY analysis due to complications with applying different weights per year, resulting in summary statistics figures and model estimates differing slightly for both total number of observations and calculated variables. An expansion of the analysis performed in this paper would ideally utilise differing datasets. Given that the data is localized for the United States but the Great Recession had global economic ramifications, it would be interesting to investigate whether the trends can be observed within other countries.
 
 \newpage
 
