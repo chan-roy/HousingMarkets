@@ -1,5 +1,5 @@
 ---
-title: "Indirect Interventions for Stabilizing Housing Markets"
+title: "Effectiveness of Indirect Interventions for Reducing Mortgage Defaults"
 subtitle: "Reproduction of Unemployment Insurance as a Housing Market Stabilizer (Hsu, Matsa, and Melzer 2018)"
 author: 
   - Roy Chan
