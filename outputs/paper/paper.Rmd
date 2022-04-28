@@ -14,7 +14,6 @@ bibliography: references.bib
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
-
 library(tidyverse)
 library(kableExtra)
 library(here)
@@ -22,7 +21,9 @@ library(here)
 
 # Introduction
 
-During periods of severe economic and housing market instability such as the time of the Great Recession, policymakers are concerned with the potential of a significant increase in the number of mortgage defaults, wherein a mortgage agreement is broken most often caused by the mortgagor (borrower in a mortgage agreement) failing to make payments. Mortgage defaults directly lead to the process of foreclosures which create additional cost for lenders who attempt to recoup the cost of the property. However, it is not always clear what type of intervention is most appropriate and/or feasible to relieve this issue provided the likelihood of high strain on the economy during such times. In the paper \textit{Unemployment Insurance as a Housing Market Stabilizer} [@citeHsu], it is discussed that there exists a debate on the reasoning for mortgage defaults rendering it difficult to effectively design an intervening policy. Some mortgagors may choose to purposefully default on their mortgages, in the cases where the value of the debt significantly outweights the price of the property. Their paper focuses on the expansions of unemployment insurance and benefits during the Great Recession, and hypothesises that it resulted in a significant reduction of the number of foreclosures during that time, as well as dampening changes in housing prices as a result of labor market instability. In this paper, we will be replicating the analysis originally presented by [@citeHsu] as well as expanding on their analysis of housing price changes.
+During periods of severe economic and housing market instability such as the time of the Great Recession, policymakers are concerned with the potential of a significant increase in the number of mortgage defaults, wherein a mortgage agreement is broken most often caused by the mortgagor (borrower in a mortgage agreement) failing to make payments. Mortgage defaults directly lead to the process of foreclosures which create additional cost for lenders who attempt to recoup the cost of the property. However, it is not always clear what type of intervention is most appropriate and/or feasible to relieve this issue provided the likelihood of high strain on the economy during such times. 
+
+In the paper \textit{Unemployment Insurance as a Housing Market Stabilizer} [@citeHsu], it is discussed that there exists a debate on the reasoning for mortgage defaults rendering it difficult to effectively design an intervening policy. Some mortgagors may choose to purposefully default on their mortgages, in the cases where the value of the debt significantly outweights the price of the property. Their paper focuses on the expansions of unemployment insurance and benefits during the Great Recession, and hypothesises that it resulted in a significant reduction of the number of foreclosures during that time, as well as dampening changes in housing prices as a result of labor market instability. In this paper, we will be replicating the analysis originally presented by [@citeHsu] as well as expanding on their analysis of housing price changes.
 
 # Data
 ```{r loadData}
@@ -36,7 +37,7 @@ all_panels <- read_csv(here::here("inputs/data/all_panels.csv"))
 ```
 We would like to investigate the relationship between changes in unemployment benefit generosity and the number of home foreclosures within the United States. The original analysis performed by [@citeHsu] is done in Stata. For the purposes of aiding reproducibility, we will be reproducing their scripts using `R` [@citeR], `dplyr` [@citeDplyr] and converting data filetypes with `haven` [@citeHaven]. Data is retrieved for presenting within this report using `here` [@citeHere]. Plots are created using `ggplot2` [@citeGgplot]. Tables are generated using `kableExtra` [@citeKable].
 
-As a reproduction, we will be utilising the same data as the original paper, as made available and obtained from openICPSR (CITATION). There are five separate datasets used within the paper:
+As a reproduction, we will be utilising the same data as the original paper, as made available and obtained from openICPSR [@citeData]. There are five separate datasets used within the paper:
 
 - Attributes relating to unemployment benefits for each state for the years of 1991-2010, obtained from the Bureau of Labor Statistics, Bureau of Economic Analysis, Department of Labor, and Hirsch and Macpherson (2003).
 
@@ -58,30 +59,30 @@ all_panels %>%
   pack_rows("State characteristics (1991-2010, N = 1020)", 1, 14) %>%
     pack_rows("Unemployment insurance", 1, 10) %>%
     pack_rows("Economic variables", 11, 14) %>%
-  pack_rows("SIPP household characteristics and delinquency data (1991-2010, N = 52,713)", 15, 31) %>%
+  pack_rows("SIPP household characteristics and delinquency data (1991-2010, N = 52,713)", 15, 30) %>%
     pack_rows("Mortgage and housing", 15, 20) %>%
     pack_rows("Employment, income, and assets", 21, 25) %>%
-    pack_rows("Education (highest within household)", 26, 31) %>%
-  pack_rows("NLSY household characteristics and foreclosure analysis (2010 and 2012, N = 7689)", 32, 39) %>%
-    pack_rows("Mortgage and housing", 32, 36) %>%
+    pack_rows("Education (highest within household)", 26, 30) %>%
+  pack_rows("NLSY household characteristics and foreclosure analysis (2010 and 2012, N = 7689)", 31, 39) %>%
+    pack_rows("Mortgage and housing", 31, 36) %>%
     pack_rows("Employment, income, and assets", 37, 39)
 ```
 
 
 # Model
-As we are primarily interested in how changes in unemployment benefits affect the number of mortgage defaults, we would like to use a model that encompasses the relationship between these two factors. We will be using and replicating the results of model 2 in the original paper, which models the relationship between mortgage delinquency and unemployment benefits. There exists a significant amount of variability between each state's unemployment benefits [@citeHsu] and we want to account for economic differences between households, so control variables are included. The model uses the data from SIPP.
+As we are primarily interested in how changes in unemployment benefits affect the number of mortgage defaults, a suitable model should encompass the relationship between these two factors. Thus, we will be using and replicating the results of model 2 in the original paper, which models the relationship between mortgage delinquency and unemployment benefits. An advantage of this model as compared to the others within the paper is that there exists a significant amount of variability between each state's unemployment benefits [@citeHsu], and so we want to account for economic differences between households by the inclusion of control variables. The model uses data from the SIPP years 1991-2010, and is as follows:
 
 \begin{center}
 $Delinquent_{is} = \alpha + \beta MaxEBEUC_s \times Layoff_i + \delta Layoff_i + \zeta X_i + \lambda_s + \epsilon_{is}$
 \end{center}
 
-$MaxEBEUC$ is the product of the maximum weekly unemployment benefits, unemployment insurance and emergency unemployment compensation, and the maximum number of weeks for which the benefits can be paid, $Layoff_i$ is the indicator of whether a layoff occurred within the household in prior 12 months, and $\zeta X_i, \lambda_s$ represent the control household and state variables respectively.
+$Layoff$ is a categorical variable for indicating if the respondent household has experienced a layoff, and thus eligible for unemployment benefits. It is interacted with $MaxEBEUC$, the product of the maximum amount of weekly unemployment benefits available comprised from extended benefits (EB) and emergency unemployment compensation (EUC), and the maximum number of weeks for which the benefits can be paid, $Layoff_i$ is the indicator of whether a layoff occurred within the household in prior 12 months, and $\zeta X_i, \lambda_s$ represent the control household and state variables respectively.
 
 # Results
 Firstly, we will replicate Figure 3 of the original paper, plotting mortgage delinquency against maximum unemployment benefits, to quickly visualise and validate that there is a relationship between them.
 
-```{r plotModel, fig.cap="Correlation between change in mortgage delinquency and max benefit by state, for SIPP years 1991 and 2010", fig.height = 5, fig.width = 5}
-# calculate change in max benefit and change in mortgage delinquency percentage over all years
+```{r plotModel, fig.cap="Correlation between change in mortgage delinquency and max benefit by state, for SIPP years 1991 and 2010", fig.height = 4, fig.width = 5}
+# calculate change in max benefit and change in mortgage delinquency percentage between the oldest and newest years of the SIPP
 data_2010 <- sipp_analysis %>%
   filter(layoff == 1 & year == 2010) %>%
   select(year, stcode, delinq_mort, max_ben) %>%
@@ -109,7 +110,7 @@ plot_data %>%
   labs(x = "Change in Max Unemployment Benefit (%)", y = "Change in Mortgage Delinquency Rate (%)", title = "Negative correlation between mortgage delinquency \nand max unemployment benefits", caption="* Numbers correspond to U.S. FIPS codes for states")
 ```
 
-As we can see from the plot, there exists a negative correlation between unemployment benefits and mortgage delinquency, as increases in benefits reflect a decrease in delinquency. Next, we perform our linear regression using the aforementioned model, for which we show the results in Table \@ref(tab:modelTable).
+As we can discern from the plot, there exists a negative correlation between unemployment benefits and mortgage delinquency, as increases in benefits reflect a decrease in delinquency. At this point, we perform our linear regression using the aforementioned model. There are three variations of the model discussed within the original paper, the first being as originally shown, the second as a cubic regression for the variable of $MaxEBEUC$, and the third focusing on weeks of benefit duration instead of compensation directly. We show the results of these three regression models in Table \@ref(tab:modelTable).
 
 ```{r model, include=FALSE}
 # models adapted from sipp_analysis.do 
@@ -130,17 +131,22 @@ model_stats <- data.frame(labels = c("Max EB EUC * Layoff", "Max EB EUC Duration
 model_stats %>% 
   kbl(booktabs = T, col.names = c(" ", "1", "2", "3"), caption="Summary of Linear Regression Results", escape = FALSE) %>% 
   kable_styling(position = "center", latex_options = "HOLD_position") %>%
-  add_header_above(c(" " = 1, "Linear model variation" = 3)) %>%
-  footnote(alphabet = "Standard error in brackets")
+  add_header_above(c(" " = 1, "Mortgage delinquency" = 3)) %>%
+  footnote(general = "Standard error of estimates stated in brackets.")
 ```
 
+Relative to the results obtained in the original paper, we are able to replicate similar results using the data and adapting the regression models from Stata to `R`. For all three variations, our estimated values are statistically significant at the $p(<0.05)$ level. Thus, we state that for every $1000 increase in unemployment benefits, there is a corresponding -0.24% decrease in probability of mortgage delinquency.
+
 # Discussion
+## Effectiveness of unemployment insurance to prevent mortgage delinquency
+- magnitude of the percentage probability change is small
+- discussion of strategically defaulting (CITATION)
+- limited benefit in cases where mortgage costs outweigh debt
+- issue with indirect intervention is in itself, indiviudals may not be concerned with mortgage payments in times of economic hardship
+
 
 ## Weaknesses
-- unfamiliarity with Stata, code conversion may not have fully replicated original processes
-- variable of house price growth was not made available, which required us to exclude it from our models 
-- weights were not applied for SIPP and NLSY analysis due to complications with applying different weights by year, summary statistics figures and model estimates differ
-- however, we still were able to achieve a consistent result with the original paper despite weights not being applied
+While this paper was successful in replicating aspects of the original paper, there are several weaknesses that limit its accuracy. As the original analysis was written and performed in Stata, I still have limited familiarity with the software, thus the code conversion to R may not have fully replicated original processes, with not all methods used in the original being available. With regards to the limitations of the data, the variable of house price growth was not made available, which required us to exclude it from our models. Weights were not applied for SIPP and NLSY analysis due to complications with applying different weights per year, resulting in summary statistics figures and model estimates differing slightly for both total number of observations and calculated variables.
 
 \newpage
 
@@ -150,6 +156,142 @@ model_stats %>%
 
 # Enhancement
 ## Datasheet for Dataset
+Extract of the questions from [@citeGebru].
+
+**Motivation**
+
+1. *For what purpose was the dataset created? Was there a specific task in mind? Was there a specific gap that needed to be filled? Please provide a description.*
+    - The dataset was created to investigate the potential effectiveness of indirect interventions in the housing market, specifically in relation to expansions in unemployment insurance benefits.
+2. *Who created the dataset (for example, which team, research group) and on behalf of which entity (for example, company, institution, organization)?*
+    - Joanne W. Hsu, David A. Matsa, Brian T. Melzer on behalf of the American Economic Association.
+3. *Who funded the creation of the dataset? If there is an associated grant, please provide the name of the grantor and the grant name and number.*
+    - Information unavailable
+4. *Any other comments?*
+    - None
+
+**Composition**
+
+1. *What do the instances that comprise the dataset represent (for example, documents, photos, people, countries)? Are there multiple types of instances (for example, movies, users, and ratings; people and interactions between them; nodes and edges)? Please provide a description.*
+	- Employment data, survey responses from SIPP and NLSY79
+2. *How many instances are there in total (of each type, if appropriate)?*
+	- 5
+3. *Does the dataset contain all possible instances or is it a sample (not necessarily random) of instances from a larger set? If the dataset is a sample, then what is the larger set? Is the sample representative of the larger set (for example, geographic coverage)? If so, please describe how this representativeness was validated/verified. If it is not representative of the larger set, please describe why not (for example, to cover a more diverse range of instances, because instances were withheld or unavailable).*
+	- Contains all possible instances, nationally representative for the United States, validated through survey design and data collection methodology
+4. *What data does each instance consist of? "Raw" data (for example, unprocessed text or images) or features? In either case, please provide a description.*
+	- Raw data, categorical variables
+5. *Is there a label or target associated with each instance? If so, please provide a description.*
+	- No
+6. *Is any information missing from individual instances? If so, please provide a description, explaining why this information is missing (for example, because it was unavailable). This does not include intentionally removed information, but might include, for example, redacted text.*
+	- Yes, no recorded responses for certain individual variables in survey data instances
+7. *Are relationships between individual instances made explicit (for example, users' movie ratings, social network links)? If so, please describe how these relationships are made explicit.*
+	- No
+8. *Are there recommended data splits (for example, training, development/validation, testing)? If so, please provide a description of these splits, explaining the rationale behind them.*
+	- No
+9. *Are there any errors, sources of noise, or redundancies in the dataset? If so, please provide a description.*
+	- Redundancies of education level recorded twice
+10. *Is the dataset self-contained, or does it link to or otherwise rely on external resources (for example, websites, tweets, other datasets)? If it links to or relies on external resources, a) are there guarantees that they will exist, and remain constant, over time; b) are there official archival versions of the complete dataset (that is, including the external resources as they existed at the time the dataset was created); c) are there any restrictions (for example, licenses, fees) associated with any of the external resources that might apply to a dataset consumer? Please provide descriptions of all external resources and any restrictions associated with them, as well as links or other access points, as appropriate.*
+	- Self-contained
+11. *Does the dataset contain data that might be considered confidential (for example, data that is protected by legal privilege or by doctor-patient confidentiality, data that includes the content of individuals' non-public communications)? If so, please provide a description.*
+	- No, individual household price growth has been removed
+12. *Does the dataset contain data that, if viewed directly, might be offensive, insulting, threatening, or might otherwise cause anxiety? If so, please describe why.*
+	- No
+13. *Does the dataset identify any sub-populations (for example, by age, gender)? If so, please describe how these subpopulations are identified and provide a description of their respective distributions within the dataset.*
+	- No
+14. *Is it possible to identify individuals (that is, one or more natural persons), either directly or indirectly (that is, in combination with other data) from the dataset? If so, please describe how.*
+	- No
+15. *Does the dataset contain data that might be considered sensitive in any way (for example, data that reveals race or ethnic origins, sexual orientations, religious beliefs, political opinions or union memberships, or locations; financial or health data; biometric or genetic data; forms of government identification, such as social security numbers; criminal history)? If so, please provide a description.*
+	- Reveals financial data, specifically mortgage information, equity, income, employment status, net worth
+16. *Any other comments?*
+	- None
+
+**Collection process**
+
+1. *How was the data associated with each instance acquired? Was the data directly observable (for example, raw text, movie ratings), reported by subjects (for example, survey responses), or indirectly inferred/derived from other data (for example, part-of-speech tags, model-based guesses for age or language)? If the data was reported by subjects or indirectly inferred/derived from other data, was the data validated/verified? If so, please describe how.*
+	- Reported by subjects
+2. *What mechanisms or procedures were used to collect the data (for example, hardware apparatuses or sensors, manual human curation, software programs, software APIs)? How were these mechanisms or procedures validated?*
+	- Manual human curation, household visits and telephone interviews 
+3. *If the dataset is a sample from a larger set, what was the sampling strategy (for example, deterministic, probabilistic with specific sampling probabilities)?*
+	- N/A
+4. *Who was involved in the data collection process (for example, students, crowdworkers, contractors) and how were they compensated (for example, how much were crowdworkers paid)?*
+	- U.S. government employees, compensation data unavailable
+5. *Over what timeframe was the data collected? Does this timeframe match the creation timeframe of the data associated with the instances (for example, recent crawl of old news articles)? If not, please describe the timeframe in which the data associated with the instances was created.*
+	- 1991-2010, dataset creation in 2018.
+6. *Were any ethical review processes conducted (for example, by an institutional review board)? If so, please provide a description of these review processes, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- No
+7. *Did you collect the data from the individuals in question directly, or obtain it via third parties or other sources (for example, websites)?*
+	- Obtained via third party, made accessible through ICPSR
+8. *Were the individuals in question notified about the data collection? If so, please describe (or show with screenshots or other information) how notice was provided, and provide a link or other access point to, or otherwise reproduce, the exact language of the notification itself.*
+	- N/A
+9. *Did the individuals in question consent to the collection and use of their data? If so, please describe (or show with screenshots or other information) how consent was requested and provided, and provide a link or other access point to, or otherwise reproduce, the exact language to which the individuals consented.*
+	- N/A
+10. *If consent was obtained, were the consenting individuals provided with a mechanism to revoke their consent in the future or for certain uses? If so, please provide a description, as well as a link or other access point to the mechanism (if appropriate).*
+	- N/A
+11. *Has an analysis of the potential impact of the dataset and its use on data subjects (for example, a data protection impact analysis) been conducted? If so, please provide a description of this analysis, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- No
+12. *Any other comments?*
+	- None
+
+**Preprocessing/cleaning/labeling**
+
+1. *Was any preprocessing/cleaning/labeling of the data done (for example, discretization or bucketing, tokenization, part-of-speech tagging, SIFT feature extraction, removal of instances, processing of missing values)? If so, please provide a description. If not, you may skip the remaining questions in this section.*
+	- Yes, log transformations and demeaning of certain variables
+2. *Was the "raw" data saved in addition to the preprocessed/cleaned/labeled data (for example, to support unanticipated future uses)? If so, please provide a link or other access point to the "raw" data.*
+	- Yes
+3. *Is the software that was used to preprocess/clean/label the data available? If so, please provide a link or other access point.*
+	- Yes, https://www.stata.com/
+4. *Any other comments?*
+	- None
+
+**Uses**
+
+1. *Has the dataset been used for any tasks already? If so, please provide a description.*
+	- Yes, used in published paper 
+2. *Is there a repository that links to any or all papers or systems that use the dataset? If so, please provide a link or other access point.*
+	- https://www.aeaweb.org/articles?id=10.1257/aer.20140989
+3. *What (other) tasks could the dataset be used for?*
+	- Exploring economic trends
+4. *Is there anything about the composition of the dataset or the way it was collected and preprocessed/cleaned/labeled that might impact future uses? For example, is there anything that a dataset consumer might need to know to avoid uses that could result in unfair treatment of individuals or groups (for example, stereotyping, quality of service issues) or other risks or harms (for example, legal risks, financial harms)? If so, please provide a description. Is there anything a dataset consumer could do to mitigate these risks or harms?*
+	- No
+5. *Are there tasks for which the dataset should not be used? If so, please provide a description.*
+	- No
+6. *Any other comments?*
+	- None
+
+**Distribution**
+
+1. *Will the dataset be distributed to third parties outside of the entity (for example, company, institution, organization) on behalf of which the dataset was created? If so, please provide a description.*
+	- Yes, available through ICPSR
+2. *How will the dataset be distributed (for example, tarball on website, API, GitHub)? Does the dataset have a digital object identifier (DOI)?*
+	- Website, DOI: 10.3886/E116160V1
+3. *When will the dataset be distributed?*
+	- Distributed on 2019-12-06
+4. *Will the dataset be distributed under a copyright or other intellectual property (IP) license, and/or under applicable terms of use (ToU)? If so, please describe this license and/ or ToU, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms or ToU, as well as any fees associated with these restrictions.*
+	- Modified BSD License, Creative Commons Attribution 4.0 International Public License. Terms stated in LICENSE.txt
+5. *Have any third parties imposed IP-based or other restrictions on the data associated with the instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms, as well as any fees associated with these restrictions.*
+	- No
+6. *Do any export controls or other regulatory restrictions apply to the dataset or to individual instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any supporting documentation.*
+	- No
+7. *Any other comments?*
+	- None
+
+**Maintenance**
+
+1. *Who will be supporting/hosting/maintaining the dataset?*
+	- ICPSR
+2. *How can the owner/curator/manager of the dataset be contacted (for example, email address)?*
+	- Can be contacted through ICPSR
+3. *Is there an erratum? If so, please provide a link or other access point.*
+	- N/A
+4. *Will the dataset be updated (for example, to correct labeling errors, add new instances, delete instances)? If so, please describe how often, by whom, and how updates will be communicated to dataset consumers (for example, mailing list, GitHub)?*
+	- Unknown
+5. *If the dataset relates to people, are there applicable limits on the retention of the data associated with the instances (for example, were the individuals in question told that their data would be retained for a fixed period of time and then deleted)? If so, please describe these limits and explain how they will be enforced.*
+	- No
+6. *Will older versions of the dataset continue to be supported/hosted/maintained? If so, please describe how. If not, please describe how its obsolescence will be communicated to dataset consumers.*
+	- Unknown
+7. *If others want to extend/augment/build on/contribute to the dataset, is there a mechanism for them to do so? If so, please provide a description. Will these contributions be validated/verified? If so, please describe how. If not, why not? Is there a process for communicating/distributing these contributions to dataset consumers? If so, please provide a description.*
+	- TBD
+8. *Any other comments?*
+	- None
 
 \newpage
 
